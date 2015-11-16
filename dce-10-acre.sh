@@ -9,8 +9,9 @@ DCE_INSTALLED=$(which ${DCE_NAME})
 VERBOSE_MODE="false"
 
 SHORT_FLAGS=":M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:"
-LONG_OPTS="[help][delete][delete-only][cattle-version]:[name]:"
+LONG_OPTS="[help][delete][delete-only][cattle-version]:[name]:[ngrok][ngrok-url]"
 
+DCE_COMMAND="show_usage"
 
 #Variables used in script. Can be overridden.
 : ${DCE_USAGE_FILE:="/tmp/${DCE_NAME}-usage.txt"}
@@ -179,6 +180,8 @@ ${DCE_NAME} flags:
     -d | --delete(delete existing cluster if it exists.)
     -D | --delete-only(Only delete existing cluster if it exists.)
     -i Print out master ip of cluster (Can be used in combination with -N)
+    --ngrok Run an ngrok container on the master so that rancher can be accessed via public url. (Hides rancher ip.)
+    --ngrok-url Get the ngrok url for the cluster.
 
 Minimal command to use all defaults:
     ${DCE_NAME} -f
@@ -326,6 +329,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             DCE_DELETE_CLUSTER="true"
             DCE_SKIP_CHECK="true"
             DCE_DELETE_ONLY="true"
+            DCE_COMMAND="deletecluster"
             ;;
         V)
             echo $(tput setaf 2) 'Verbose mode enabled' $(tput sgr0)
@@ -341,13 +345,9 @@ while getopts "${SHORT_FLAGS}" opt; do
         ngrok)
             DCE_USE_NGROK="true"
             ;;
-        ngrok-subdomain)
+        ngrok-url)
             DCE_USE_NGROK="true"
-            DCE_NGROK_SUBDOMAIN=${OPTARG}
-            ;;
-        ngrok-client)
-            DCE_USE_NGROK="true"
-            DCE_NGROK_CLIENT_URL=${OPTARG}
+            DCE_COMMAND="ngrokurl"
             ;;
         h | help)
             if [ -z "${DCE_INSTALLED}" ]
@@ -363,8 +363,8 @@ while getopts "${SHORT_FLAGS}" opt; do
             exit 0
             ;;
         *)
-            myEcho Missing arg for param -$OPTARG
-            show_short_help
+            echo Missing arg for param -$OPTARG 1>&2
+
             exit 1
             ;;
     esac
@@ -378,37 +378,32 @@ then
     read ANS
     [[ "$ANS" != "Y" ]] && myEcho exiting && exit 202
 fi
+[[ ${DCE_COMMAND} == "show_usage" ]] && DCE_COMMAND="makecluster"
 
-run_ngrok_client(){
-    set -x
-    NGROK_CLIENT_URL="${1}"
-    NGROK_SUBDOMAIN="${2}"
-    [[ "$(wget -sq ${NGROK_CLIENT_URL}; echo $?)" != "0" ]] && echo Ngrok client file doesn\'t exist && return 1
-    NGROK_EXE=$(which ngrok)
-    if [[ -z ${NGROK_EXE} ]]
+cluster_exists(){
+    echo $(docker-machine ls -q| grep ${DCE_CLUSTER_NAME} | wc -l)
+}
+
+ngrok_url(){
+    [[ "$(cluster_exists)" == "0" ]] && echo "Cluster ${DCE_CLUSTER_NAME} doesn't exist" && exit 1
+    RANCHER_NGROK_URL=$(docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker logs rancher-ngrok | grep -iIohE 'http?://[^[:space:]]+'")
+    if [ -z ${RANCHER_NGROK_URL} ]
     then
-        NGROK_EXE=/tmp/ngrok
-        rm -f /tmp/ngrok.zip
-        curl -sLo /tmp/ngrok.zip ${NGROK_CLIENT_URL}
-        unzip -oqd /tmp ${NGROK_EXE}.zip || cp /tmp/ngrok.zip /tmp/ngrok
-        chmod u+x ${NGROK_EXE}
+        run_ngrok
+    else
+        if [[ ${DCE_COMMAND} == "ngrokurl" ]]
+        then
+            echo ${RANCHER_NGROK_URL}
+        else
+            echo You can access rancher at: ${RANCHER_NGROK_URL}
+        fi
     fi
-    NGROK_VERSION="$(${NGROK_EXE} version)"
-    if [[ "${NGROK_VERSION}" == "1.7" ]]
-    then
-        echo Found Ngrok client version 1.7
-        [[ ! -z "${NGROK_SUBDOMAIN}" ]] && NGROK_ARGS="--subdomain=${NGROK_SUBDOMAIN}"
-        /tmp/ngrok -log=stdout "${NGROK_ARGS}" 80 > /tmp/ngrok.log &
-        disown
-    elif [[ $(echo ${NGROK_VERSION}| cut -f 3 -d " ") == "2.0.19" ]]
-    then
-        echo Found Ngrok client version 2
-        return 0
-        [[ ! -z "${NGROK_SUBDOMAIN}" ]] && NGROK_ARGS="--subdomain=${NGROK_SUBDOMAIN}"
-        /tmp/ngrok http 80 -log=stdout "${NGROK_ARGS}" > /tmp/ngrok.log &
-        disown
-    fi
-    set +x
+}
+
+run_ngrok(){
+    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -d --name=rancher-ngrok -e IP_PORT=$(get_master_ip):80 hibooboo2/ngrok"
+    sleep 5
+    ngrok_url
 }
 
 get_master_ip() {
@@ -463,6 +458,8 @@ create_slaves() {
 }
 
 delete_cluster(){
+    CLUSTER_EXISTS=$(cluster_exists)
+    [[ "${CLUSTER_EXISTS}" != "0" && "${DCE_DELETE_CLUSTER}" != "true" ]] && echo Cluster already exists with ${CLUSTER_EXISTS} nodes && exit 1
     nodes=$(docker-machine ls -q| grep ${DCE_CLUSTER_NAME})
     for i in ${nodes};
     do
@@ -473,11 +470,8 @@ delete_cluster(){
 
 build_cluster()
 {
-    CLUSTER_EXISTS=$(echo $(docker-machine ls -q| grep ${DCE_CLUSTER_NAME} | wc -l))
-    [[ "${CLUSTER_EXISTS}" != "0" && "${DCE_DELETE_CLUSTER}" != "true" ]] && echo Cluster already exists with ${CLUSTER_EXISTS} nodes && exit 1
-    [[ "${DCE_DELETE_CLUSTER}" == "true" ]] && delete_cluster
-    CLUSTER_EXISTS=$(echo $(docker-machine ls -q| grep ${DCE_CLUSTER_NAME} | wc -l))
-    if [ "${CLUSTER_EXISTS}" == 0 ]; then
+    [[ ${DCE_DELETE_CLUSTER} == "true" ]] && delete_cluster
+    if [ "$(cluster_exists)" == 0 ]; then
         start=$(date -u +"%s")
         create_master
         IP=$(get_master_ip)
@@ -516,21 +510,32 @@ build_cluster()
         echo "$(($diff / 60)) minutes and $(($diff % 60)) seconds elapsed to create master and start rancher."
         diff=$(($all_slaves-$master))
         echo "$(($diff / 60)) minutes and $(($diff % 60)) seconds elapsed to create slaves and get them all in rancher."
-
         if [[ "${DCE_USE_NGROK}" == "true" ]]
         then
-            docker-machine ssh "${DCE_CLUSTER_NAME}-master" "$(typeset -f run_ngrok_client);run_ngrok_client ${DCE_NGROK_CLIENT_URL} ${DCE_NGROK_SUBDOMAIN}"
+            run_ngrok
         fi
         exit 0
     else
-        echo Cluster exists still, or existed and didn\'t delete
+        echo "Cluster ${DCE_CLUSTER_NAME} exists still, or existed and didn't delete add
+        -d flag to delete old cluster and make new one."
         exit 69
     fi
 }
 
  main() {
-    [[ ! -z "${DCE_SLAVES}" ]] && build_cluster
-    show_usage
+    case ${DCE_COMMAND} in
+        makecluster)
+            build_cluster
+            ;;
+        ngrokurl)
+            ngrok_url
+            ;;
+        deletecluster)
+            delete_cluster
+            ;;
+        shorthelp)
+            show_short_help
+    esac
  }
 
  main
