@@ -24,8 +24,7 @@ DCE_COMMAND="show_usage"
 : ${DCE_SKIP_CHECK="false"}
 : ${DCE_SLAVES=3}
 : ${DCE_USE_NGROK:="false"}
-: ${DCE_NGROK_SUBDOMAIN:=}
-: ${DCE_NGROK_CLIENT_URL:=https://dl.ngrok.com/ngrok_2.0.19_linux_amd64.zip}
+: ${DCE_USE_BUILD_MASTER:=false}
 
 DCE_SOURCE=${BASH_SOURCE[0]}
 if [[ -L "${DCE_SOURCE}" ]]
@@ -190,55 +189,60 @@ Minimal command to use all defaults:
 EOF
 }
 get_start_build_master_command() {
-    : ${CATTLE_REPO:="https://github.com/rancherio/cattle.git"}
-    : ${CATTLE_WORK_DIR:=cattle}
-    : ${CATTLE_COMMIT:=master}
+    if [[ ${DCE_USE_BUILD_MASTER} == "true" ]]
+    then
+        : ${CATTLE_REPO:="https://github.com/rancherio/cattle.git"}
+        : ${CATTLE_WORK_DIR:=cattle}
+        : ${CATTLE_COMMIT:=master}
 
-    : ${PYTHON_AGENT_REPO:="https://github.com/rancherio/python-agent.git"}
-    : ${PYTHON_AGENT_WORK_DIR:=python-agent}
-    : ${PYTHON_AGENT_COMMIT:=master}
+        : ${PYTHON_AGENT_REPO:="https://github.com/rancherio/python-agent.git"}
+        : ${PYTHON_AGENT_WORK_DIR:=python-agent}
+        : ${PYTHON_AGENT_COMMIT:=master}
 
-    : ${HOST_API_REPO:="https://github.com/rancherio/host-api.git"}
-    : ${HOST_API_WORK_DIR:=host-api}
-    : ${HOST_API_COMMIT:=master}
+        : ${HOST_API_REPO:="https://github.com/rancherio/host-api.git"}
+        : ${HOST_API_WORK_DIR:=host-api}
+        : ${HOST_API_COMMIT:=master}
 
-    : ${UI_REPO:="https://github.com/rancherio/ui.git"}
-    : ${UI_WORK_DIR:=ui}
-    : ${UI_COMMIT:=master}
+        : ${UI_REPO:="https://github.com/rancherio/ui.git"}
+        : ${UI_WORK_DIR:=ui}
+        : ${UI_COMMIT:=master}
 
-    : ${VALIDATION_TESTS_REPO:="https://github.com/rancherio/validation-tests.git"}
-    : ${VALIDATION_TESTS_WORK_DIR:=validation-tests}
-    : ${VALIDATION_TESTS_COMMIT:=master}
+        : ${VALIDATION_TESTS_REPO:="https://github.com/rancherio/validation-tests.git"}
+        : ${VALIDATION_TESTS_WORK_DIR:=validation-tests}
+        : ${VALIDATION_TESTS_COMMIT:=master}
 
-    : ${NODE_AGENT_REPO:="https://github.com/rancherio/node-agent.git"}
-    : ${NODE_AGENT_WORK_DIR:=node-agent}
-    : ${NODE_AGENT_COMMIT:=master}
+        : ${NODE_AGENT_REPO:="https://github.com/rancherio/node-agent.git"}
+        : ${NODE_AGENT_WORK_DIR:=node-agent}
+        : ${NODE_AGENT_COMMIT:=master}
 
-    : ${BUILD_TOOLS_REPO:="https://github.com/rancherio/build-tools.git"}
-    : ${BUILD_TOOLS_COMMIT:=master}
+        : ${BUILD_TOOLS_REPO:="https://github.com/rancherio/build-tools.git"}
+        : ${BUILD_TOOLS_COMMIT:=master}
 
-    : ${CATTLE_UI_URL:="//releases.rancher.com/ui/latest"}
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_REPO=${CATTLE_REPO} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_WORK_DIR=${CATTLE_WORK_DIR} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_COMMIT=${CATTLE_COMMIT} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e PYTHON_AGENT_REPO=${PYTHON_AGENT_REPO} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e PYTHON_AGENT_WORK_DIR=${PYTHON_AGENT_WORK_DIR} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e PYTHON_AGENT_COMMIT=${PYTHON_AGENT_COMMIT} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e HOST_API_REPO=${HOST_API_REPO} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e HOST_API_WORK_DIR=${HOST_API_WORK_DIR} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e HOST_API_COMMIT=${HOST_API_COMMIT} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e UI_REPO=${UI_REPO} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e UI_WORK_DIR=${UI_WORK_DIR} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e UI_COMMIT=${UI_COMMIT} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e VALIDATION_TESTS_REPO=${VALIDATION_TESTS_REPO} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e VALIDATION_TESTS_WORK_DIR=${VALIDATION_TESTS_WORK_DIR} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e VALIDATION_TESTS_COMMIT=${VALIDATION_TESTS_COMMIT} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e NODE_AGENT_REPO=${NODE_AGENT_REPO} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e NODE_AGENT_WORK_DIR=${NODE_AGENT_WORK_DIR} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e NODE_AGENT_COMMIT=${NODE_AGENT_COMMIT} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e BUILD_TOOLS_REPO=${BUILD_TOOLS_REPO} "
-    RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_UI_URL=${CATTLE_UI_URL} "
-    echo "docker run -d -p 80:8080 ${RUN_CMD_ARGS} --privileged rancher/build-master"
+        : ${CATTLE_UI_URL:="//releases.rancher.com/ui/latest"}
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_REPO=${CATTLE_REPO} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_WORK_DIR=${CATTLE_WORK_DIR} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_COMMIT=${CATTLE_COMMIT} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e PYTHON_AGENT_REPO=${PYTHON_AGENT_REPO} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e PYTHON_AGENT_WORK_DIR=${PYTHON_AGENT_WORK_DIR} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e PYTHON_AGENT_COMMIT=${PYTHON_AGENT_COMMIT} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e HOST_API_REPO=${HOST_API_REPO} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e HOST_API_WORK_DIR=${HOST_API_WORK_DIR} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e HOST_API_COMMIT=${HOST_API_COMMIT} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e UI_REPO=${UI_REPO} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e UI_WORK_DIR=${UI_WORK_DIR} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e UI_COMMIT=${UI_COMMIT} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e VALIDATION_TESTS_REPO=${VALIDATION_TESTS_REPO} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e VALIDATION_TESTS_WORK_DIR=${VALIDATION_TESTS_WORK_DIR} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e VALIDATION_TESTS_COMMIT=${VALIDATION_TESTS_COMMIT} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e NODE_AGENT_REPO=${NODE_AGENT_REPO} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e NODE_AGENT_WORK_DIR=${NODE_AGENT_WORK_DIR} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e NODE_AGENT_COMMIT=${NODE_AGENT_COMMIT} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e BUILD_TOOLS_REPO=${BUILD_TOOLS_REPO} "
+        RUN_CMD_ARGS="${RUN_CMD_ARGS} -e CATTLE_UI_URL=${CATTLE_UI_URL} "
+        echo "docker run -d -p 80:8080 ${RUN_CMD_ARGS} --privileged rancher/build-master"
+    else
+        echo "docker run -d -p 80:8080 rancher/server"
+    fi
 }
 
 while getopts "${SHORT_FLAGS}" opt; do
@@ -277,6 +281,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             CATTLE_COMMIT=${arrIN[1]}
             myEcho Using cattle version $CATTLE_REPO:$CATTLE_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/cattle/tree/${arrIN[1]}
+            DCE_USE_BUILD_MASTER="true"
             ;;
         p)
             #Set version of python agent. In form of {githubUser}/{commit/tag/branch}
@@ -285,6 +290,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             PYTHON_AGENT_COMMIT=${arrIN[1]}
             myEcho Using cattle version $PYTHON_AGENT_REPO:$PYTHON_AGENT_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/python-agent/tree/${arrIN[1]}
+            DCE_USE_BUILD_MASTER="true"
             ;;
         H)
             #Set version of hostapi. In form of {githubUser}/{commit/tag/branch}
@@ -293,6 +299,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             HOST_API_COMMIT=${arrIN[1]}
             myEcho Using cattle version $HOST_API_REPO:$HOST_API_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/host-api/tree/${arrIN[1]}
+            DCE_USE_BUILD_MASTER="true"
             ;;
         u)
             #Set version of ui. In form of {githubUser}/{commit/tag/branch}
@@ -301,6 +308,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             UI_COMMIT=${arrIN[1]}
             myEcho Using cattle version $UI_REPO:$UI_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/ui/tree/${arrIN[1]}
+            DCE_USE_BUILD_MASTER="true"
             ;;
         n)
             #Set version of node agent. In form of {githubUser}/{commit/tag/branch}
@@ -309,6 +317,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             NODE_AGENT_COMMIT=${arrIN[1]}
             myEcho Using cattle version $NODE_AGENT_REPO:$NODE_AGENT_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/node-agent/tree/${arrIN[1]}
+            DCE_USE_BUILD_MASTER="true"
             ;;
         b)
             #Set version of build tools. In form of {githubUser}/{commit/tag/branch}
@@ -317,6 +326,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             BUILD_TOOLS_COMMIT=${arrIN[1]}
             myEcho Using cattle version $BUILD_TOOLS_REPO:$BUILD_TOOLS_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/build-tools/tree/${arrIN[1]}
+            DCE_USE_BUILD_MASTER="true"
             ;;
         s)
             isNum $OPTARG

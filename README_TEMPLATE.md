@@ -3,7 +3,11 @@
 Prerequisites:
 
 - [Docker Machine](https://docs.docker.com/machine/install-machine/)
-
+- After cloning run
+```
+    git submodule init
+    git submodule update
+```
 =========
 
 ### To deploy a cluster:
