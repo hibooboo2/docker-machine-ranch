@@ -333,6 +333,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             DCE_USE_NGROK="true"
             ;;
         ngrok-url)
+            DCE_SKIP_CHECK="true"
             DCE_USE_NGROK="true"
             DCE_COMMAND="ngrokurl"
             ;;
