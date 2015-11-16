@@ -359,6 +359,10 @@ while getopts "${SHORT_FLAGS}" opt; do
             DCE_USE_NGROK="true"
             DCE_COMMAND="ngrokurl"
             ;;
+        i)
+            echo $(docker-machine ip "${DCE_CLUSTER_NAME}-master")
+            exit 0
+            ;;
         h | help)
             if [ -z "${DCE_INSTALLED}" ]
             then
@@ -504,10 +508,10 @@ build_cluster()
         echo
         echo -n "Waiting for slaves to register "
         while sleep 3; do
-            if [ "$(get_total_project_hosts)" == "3" ]; then
+            if [ "$(get_total_project_hosts)" == "${DCE_SLAVES}" ]; then
                 #Slack
                 all_slaves=$(date -u +"%s")
-                echo 3 HOSTS found.
+                echo ${DCE_SLAVES} HOSTS found.
                 break
             fi
             echo -n "."
