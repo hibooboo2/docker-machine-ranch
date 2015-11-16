@@ -55,7 +55,7 @@ dce-10-acre.sh Usage:
             dce-10-acre.sh -v rancher/56744ac585f5e0aa39ef7568a08049d305cdea05
             dce-10-acre.sh -v rancher/master
 
-    -p Similar to -v but for Python agent version.
+    -p | --python-agent-version Similar to -v but for Python agent version.
         ex:
             dce-10-acre.sh -p rancher/v0.59.0
             dce-10-acre.sh -p rancher/304646088882dee48f34b330a0182bfe96cec4fd

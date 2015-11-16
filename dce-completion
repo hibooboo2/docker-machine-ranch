@@ -1,0 +1,49 @@
+
+_dce_calc_arg()
+{
+    echo calc: 1: ${1} 2: ${2} 3: ${3} >> /tmp/dce-completion.log
+}
+
+_dce()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    echo " "> /tmp/dce-completion.log
+    echo All words ${COMP_WORDS[@]} >> /tmp/dce-completion.log
+    echo Current word ${COMP_CWORD}: ${COMP_WORDS[COMP_CWORD]} >> /tmp/dce-completion.log
+    echo Last word $((${COMP_CWORD} - 1)): ${COMP_WORDS[((COMP_CWORD - 1))]} >> /tmp/dce-completion.log
+    echo COMP_LINE= ${COMP_LINE} >> /tmp/dce-completion.log
+    echo CUR = ${cur} >> /tmp/dce-completion.log
+    COMPREPLY=( $(compgen -W "-M
+    -m
+    -C
+    -c
+    -v
+    -p
+    -H
+    -u
+    -n
+    -b
+    -s
+    -D
+    -q
+    -h
+    -V
+    -f
+    -d
+    -N
+    -h
+    -i
+    --help
+    --delete
+    --delete-only
+    --cattle-version
+    --python-agent-version
+    --name
+    --ngrok
+    --ngrok-url" -- ${cur}) )
+    TEST=( $(complete -F _dce_calc_arg -- ${cur}) )
+    echo TEST=${TEST[@]} >> /tmp/dce-completion.log
+    echo COMREPLY= ${COMPREPLY[@]} >> /tmp/dce-completion.log
+
+}
+complete -F _dce dce

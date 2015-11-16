@@ -8,8 +8,8 @@ DCE_NAME=$(basename "$0")
 DCE_INSTALLED=$(which ${DCE_NAME})
 VERBOSE_MODE="false"
 
-SHORT_FLAGS=":M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:"
-LONG_OPTS="[help][delete][delete-only][cattle-version]:[name]:[ngrok][ngrok-url]"
+SHORT_FLAGS="M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:"
+LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url]"
 
 DCE_COMMAND="show_usage"
 
@@ -61,7 +61,7 @@ ${DCE_NAME} Usage:
             ${DCE_NAME} -v rancher/56744ac585f5e0aa39ef7568a08049d305cdea05
             ${DCE_NAME} -v rancher/master
 
-    -p Similar to -v but for Python agent version.
+    -p | --python-agent-version Similar to -v but for Python agent version.
         ex:
             ${DCE_NAME} -p rancher/v0.59.0
             ${DCE_NAME} -p rancher/304646088882dee48f34b330a0182bfe96cec4fd
@@ -156,6 +156,7 @@ isValidRepoCommit() {
         echo ${SUPPLIED} not found on github.
         exit 5
     fi
+    DCE_USE_BUILD_MASTER="true"
     return 0
 }
 
@@ -167,7 +168,7 @@ ${DCE_NAME} flags:
     -C(Master cores) [${DCE_MASTER_CORES}]
     -c(slave cores) [${DCE_SLAVE_CORES}]
     -v | --cattle-version (cattle version)
-    -p(python agent version)
+    -p | --python-agent-version (python agent version)
     -H(host api version)
     -u(ui version)
     -n(node agent version)
@@ -250,30 +251,12 @@ while getopts "${SHORT_FLAGS}" opt; do
     long_args "${!OPTIND}"
 
     case $opt in
-        \?)
-            echo "Invalid option: -$OPTARG" >&2
-            show_short_help
-            exit 1
-            ;;
-        N | name)
-            DCE_CLUSTER_NAME=$OPTARG
-            ;;
-        M)
-            isNum $OPTARG
-            DCE_MASTER_MEM=$OPTARG
-            ;;
-        m)
-            isNum $OPTARG
-            DCE_SLAVE_MEM=$OPTARG
-            ;;
-        C)
-            isNum $OPTARG
-            DCE_MASTER_CORES=$OPTARG
-            ;;
-        c)
-            isNum $OPTARG
-            DCE_SLAVE_CORES=$OPTARG
-            ;;
+        \?) echo "Invalid option: -$OPTARG" >&2 && show_short_help && exit 1;;
+        N | name) DCE_CLUSTER_NAME=$OPTARG ;;
+        M) isNum $OPTARG && DCE_MASTER_MEM=$OPTARG ;;
+        m) isNum $OPTARG && DCE_SLAVE_MEM=$OPTARG ;;
+        C) isNum $OPTARG && DCE_MASTER_CORES=$OPTARG ;;
+        c) isNum $OPTARG && DCE_SLAVE_CORES=$OPTARG ;;
         v | cattle-version)
             #Set version of cattle. In form of {githubUser}/{commit/tag/branch}
             isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
@@ -281,16 +264,14 @@ while getopts "${SHORT_FLAGS}" opt; do
             CATTLE_COMMIT=${arrIN[1]}
             myEcho Using cattle version $CATTLE_REPO:$CATTLE_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/cattle/tree/${arrIN[1]}
-            DCE_USE_BUILD_MASTER="true"
             ;;
-        p)
+        p | python-agent-version)
             #Set version of python agent. In form of {githubUser}/{commit/tag/branch}
             isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
             PYTHON_AGENT_REPO="https://github.com/${arrIN[0]}/python-agent.git"
             PYTHON_AGENT_COMMIT=${arrIN[1]}
-            myEcho Using cattle version $PYTHON_AGENT_REPO:$PYTHON_AGENT_COMMIT
+            myEcho Using python agent version $PYTHON_AGENT_REPO:$PYTHON_AGENT_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/python-agent/tree/${arrIN[1]}
-            DCE_USE_BUILD_MASTER="true"
             ;;
         H)
             #Set version of hostapi. In form of {githubUser}/{commit/tag/branch}
@@ -299,7 +280,6 @@ while getopts "${SHORT_FLAGS}" opt; do
             HOST_API_COMMIT=${arrIN[1]}
             myEcho Using cattle version $HOST_API_REPO:$HOST_API_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/host-api/tree/${arrIN[1]}
-            DCE_USE_BUILD_MASTER="true"
             ;;
         u)
             #Set version of ui. In form of {githubUser}/{commit/tag/branch}
@@ -308,7 +288,6 @@ while getopts "${SHORT_FLAGS}" opt; do
             UI_COMMIT=${arrIN[1]}
             myEcho Using cattle version $UI_REPO:$UI_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/ui/tree/${arrIN[1]}
-            DCE_USE_BUILD_MASTER="true"
             ;;
         n)
             #Set version of node agent. In form of {githubUser}/{commit/tag/branch}
@@ -317,7 +296,6 @@ while getopts "${SHORT_FLAGS}" opt; do
             NODE_AGENT_COMMIT=${arrIN[1]}
             myEcho Using cattle version $NODE_AGENT_REPO:$NODE_AGENT_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/node-agent/tree/${arrIN[1]}
-            DCE_USE_BUILD_MASTER="true"
             ;;
         b)
             #Set version of build tools. In form of {githubUser}/{commit/tag/branch}
@@ -326,7 +304,6 @@ while getopts "${SHORT_FLAGS}" opt; do
             BUILD_TOOLS_COMMIT=${arrIN[1]}
             myEcho Using cattle version $BUILD_TOOLS_REPO:$BUILD_TOOLS_COMMIT
             myEcho Github Web view: github.com/${arrIN[0]}/build-tools/tree/${arrIN[1]}
-            DCE_USE_BUILD_MASTER="true"
             ;;
         s)
             isNum $OPTARG
