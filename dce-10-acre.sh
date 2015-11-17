@@ -9,12 +9,13 @@ DCE_INSTALLED=$(which ${DCE_NAME})
 VERBOSE_MODE="false"
 
 SHORT_FLAGS="M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:"
-LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url]"
+LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url][digitalocean]:"
 
 DCE_COMMAND="show_usage"
 
 #Variables used in script. Can be overridden.
 : ${DCE_USAGE_FILE:="/tmp/${DCE_NAME}-usage.txt"}
+: ${DCE_DOCKER_MACHINE_DRIVER:=virtualbox}
 : ${DCE_MASTER_MEM=2048}
 : ${DCE_SLAVE_MEM=1024}
 : ${DCE_MASTER_CORES=4}
@@ -109,6 +110,9 @@ ${DCE_NAME} Usage:
         ex: ${DCE_NAME} -i
         Might print out 192.168.99.100
 
+    --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN}  Launch vms using Digital Ocean.
+        This flag cannot be used with -C -c -M or -M.
+
 
 Example usage:
 
@@ -117,6 +121,8 @@ Example usage:
         ${DCE_NAME} -f
         or
         ${DCE_NAME} -C ${DCE_MASTER_CORES} -M ${DCE_MASTER_MEM} -c ${DCE_SLAVE_CORES} -m ${DCE_SLAVE_MEM} -s ${DCE_SLAVES}
+        or
+        ${DCE_NAME} --digitalocean 262415404adaf7be5e5019680014e85e7e70f47d5bceee39668d4120a69a6b74
 
 EOF
 if [[ ${DCE_SHORT_HELP} == "true" ]]
@@ -144,6 +150,12 @@ isNum() {
     if ! [[ ${1} =~ $re ]] ; then
         myEcho "${1} is not a valid number" >&2; show_short_help; exit 3
     fi
+}
+
+multiple_drivers() {
+    echo Cannot use --digitalocean with -c -C -m or -M.
+    show_short_help
+    exit 1
 }
 
 isValidRepoCommit() {
@@ -182,6 +194,7 @@ ${DCE_NAME} flags:
     -i Print out master ip of cluster (Can be used in combination with -N)
     --ngrok Run an ngrok container on the master so that rancher can be accessed via public url. (Hides rancher ip.)
     --ngrok-url Get the ngrok url for the cluster.
+    --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN} Create cluster using Digital Ocean vms.
 
 Minimal command to use all defaults:
     ${DCE_NAME} -f
@@ -253,10 +266,22 @@ while getopts "${SHORT_FLAGS}" opt; do
     case $opt in
         \?) echo "Invalid option: -$OPTARG" >&2 && show_short_help && exit 1;;
         N | name) DCE_CLUSTER_NAME=$OPTARG ;;
-        M) isNum $OPTARG && DCE_MASTER_MEM=$OPTARG ;;
-        m) isNum $OPTARG && DCE_SLAVE_MEM=$OPTARG ;;
-        C) isNum $OPTARG && DCE_MASTER_CORES=$OPTARG ;;
-        c) isNum $OPTARG && DCE_SLAVE_CORES=$OPTARG ;;
+        M)
+            [[ ! -z ${_DRIVER_SELECTED} && ${DCE_DOCKER_MACHINE_DRIVER} != "virtualbox" ]] && multiple_drivers
+            _DRIVER_SELECTED=true
+            isNum $OPTARG && DCE_MASTER_MEM=$OPTARG ;;
+        m)
+            [[ ! -z ${_DRIVER_SELECTED} && ${DCE_DOCKER_MACHINE_DRIVER} != "virtualbox" ]] && multiple_drivers
+            _DRIVER_SELECTED=true
+            isNum $OPTARG && DCE_SLAVE_MEM=$OPTARG ;;
+        C)
+            [[ ! -z ${_DRIVER_SELECTED} && ${DCE_DOCKER_MACHINE_DRIVER} != "virtualbox" ]] && multiple_drivers
+            _DRIVER_SELECTED=true
+            isNum $OPTARG && DCE_MASTER_CORES=$OPTARG ;;
+        c)
+            [[ ! -z ${_DRIVER_SELECTED} && ${DCE_DOCKER_MACHINE_DRIVER} != "virtualbox" ]] && multiple_drivers
+            _DRIVER_SELECTED=true
+            isNum $OPTARG && DCE_SLAVE_CORES=$OPTARG ;;
         v | cattle-version)
             #Set version of cattle. In form of {githubUser}/{commit/tag/branch}
             isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
@@ -340,6 +365,12 @@ while getopts "${SHORT_FLAGS}" opt; do
         i)
             echo $(docker-machine ip "${DCE_CLUSTER_NAME}-master")
             exit 0
+            ;;
+        digitalocean)
+            [[ ! -z ${_DRIVER_SELECTED} ]] && multiple_drivers
+            _DRIVER_SELECTED=true
+            DCE_DOCKER_MACHINE_DRIVER=digitalocean
+            DIGITALOCEAN_ACCESS_TOKEN=${OPTARG}
             ;;
         h | help)
             if [ -z "${DCE_INSTALLED}" ]
@@ -429,16 +460,32 @@ get_run_cmd()
 
 create_master(){
     myEcho Starting creation of master
-    docker-machine create --driver virtualbox --virtualbox-cpu-count "${DCE_MASTER_CORES}" \
-        --virtualbox-memory "${DCE_MASTER_MEM}" --virtualbox-no-share "${DCE_CLUSTER_NAME}-master"
+    case ${DCE_DOCKER_MACHINE_DRIVER} in
+        virtualbox)
+        docker-machine create --driver virtualbox --virtualbox-cpu-count "${DCE_MASTER_CORES}" \
+            --virtualbox-memory "${DCE_MASTER_MEM}" --virtualbox-no-share "${DCE_CLUSTER_NAME}-master"
+            ;;
+        digitalocean)
+            docker-machine create --driver digitalocean --digitalocean-access-token ${DIGITALOCEAN_ACCESS_TOKEN} \
+            --digitalocean-size "2gb" "${DCE_CLUSTER_NAME}-master"
+            ;;
+    esac
     docker-machine ssh "${DCE_CLUSTER_NAME}-master" "$(get_start_build_master_command)"
     myEcho Master created.
 }
 
 createSlave() {
     myEcho Creating  ${DCE_CLUSTER_NAME}-slave-${1}
-    docker-machine create --driver virtualbox --virtualbox-cpu-count "${DCE_SLAVE_CORES}" \
-        --virtualbox-memory "${DCE_SLAVE_MEM}" --virtualbox-no-share "${DCE_CLUSTER_NAME}-slave-${1}"
+    case ${DCE_DOCKER_MACHINE_DRIVER} in
+    virtualbox)
+        docker-machine create --driver virtualbox --virtualbox-cpu-count "${DCE_SLAVE_CORES}" \
+            --virtualbox-memory "${DCE_SLAVE_MEM}" --virtualbox-no-share "${DCE_CLUSTER_NAME}-slave-${1}"
+        ;;
+    digitalocean)
+        docker-machine create --driver digitalocean --digitalocean-access-token ${DIGITALOCEAN_ACCESS_TOKEN} \
+            --digitalocean-size "1gb" "${DCE_CLUSTER_NAME}-slave-${1}"
+        ;;
+    esac
     docker-machine ssh "${DCE_CLUSTER_NAME}-slave-${1}" "$(get_run_cmd "${DCE_CLUSTER_NAME}-slave-${1}")"
 }
 create_slaves() {

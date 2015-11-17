@@ -103,6 +103,9 @@ dce-10-acre.sh Usage:
         ex: dce-10-acre.sh -i
         Might print out 192.168.99.100
 
+    --digitalocean ${DIGITALOCEAN_ACCESS_TOKEN}  Launch vms using Digital Ocean.
+        This flag cannot be used with -C -c -M or -M.
+
 
 Example usage:
 
@@ -111,6 +114,8 @@ Example usage:
         dce-10-acre.sh -f
         or
         dce-10-acre.sh -C 4 -M 2048 -c 2 -m 1024 -s 3
+        or
+        dce-10-acre.sh --digitalocean 262415404adaf7be5e5019680014e85e7e70f47d5bceee39668d4120a69a6b74
 
 
 
