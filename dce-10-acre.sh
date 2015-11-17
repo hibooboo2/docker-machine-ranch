@@ -557,8 +557,8 @@ build_cluster()
         [[ ${VERBOSE_MODE} == true ]] && set -x
 
 
-        local master=$(($master-$start))
-        local slaves=$(($all_slaves-$master))
+        local master_diff=$(($master-$start))
+        local slaves_diff=$(($all_slaves-$master))
 
         if [[ "${DCE_USE_NGROK}" == "true" ]]
         then
@@ -566,8 +566,8 @@ build_cluster()
         fi
         run_validation_tests
         cat <<EOF
-        $(($master / 60)) minutes and $(($master % 60)) seconds elapsed to create master and start rancher.
-        $(($slaves / 60)) minutes and $(($slaves % 60)) seconds elapsed to create slaves and get them all in rancher.
+        $(($master_diff / 60)) minutes and $(($master_diff % 60)) seconds elapsed to create master and start rancher.
+        $(($slaves_diff / 60)) minutes and $(($slaves_diff % 60)) seconds elapsed to create slaves and get them all in rancher.
 EOF
         exit 0
     else

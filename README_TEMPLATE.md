@@ -1,5 +1,10 @@
 ## Wrapper to deploy Rancher using Docker Machine
+
+
 =====
+
+**This has only been tested using Mac OS X El Captain and Ubuntu 14.04**
+
 Prerequisites:
 
 - [Docker Machine](https://docs.docker.com/machine/install-machine/)
@@ -7,6 +12,14 @@ Prerequisites:
 ```
     git submodule init
     git submodule update
+```
+If you want to have autocompletion for flags have your ~/.profile:
+```
+    . ./dce-completion
+```
+Then create a symlink for `./dce-10-acre.sh` to `/usr/local/bin/dce`
+```
+    ln -s ./dce-10-acre.sh /usr/local/bin/dce
 ```
 =========
 
@@ -41,7 +54,7 @@ For bugs, questions, comments, corrections, suggestions, etc., open an issue in 
 Or just [click here](//github.com/hibooboo2/docker-machine-ranch/issues/new) to create a new issue.
 
 # License
-Copyright (c) 2014-2015 wizardofmath@gmail.com
+Copyright (c) 2014-2015 <mailto>wizardofmath@gmail.com</mailto>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
