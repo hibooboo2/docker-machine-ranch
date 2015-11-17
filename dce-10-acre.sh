@@ -567,9 +567,16 @@ build_cluster()
             run_ngrok
         fi
         run_validation_tests
+        if [[ ! -z "${RANCHER_NGROK_URL}" ]]
+        then
+            CLUSTER_URL="Ngrok url for cluster is: ${RANCHER_NGROK_URL}"
+        else
+            CLUSTER_URL="Ip for master is: $(get_master_ip)"
+        fi
         cat <<EOF
         $(($master_diff / 60)) minutes and $(($master_diff % 60)) seconds elapsed to create master and start rancher.
         $(($slaves_diff / 60)) minutes and $(($slaves_diff % 60)) seconds elapsed to create slaves and get them all in rancher.
+        ${CLUSTER_URL}
 EOF
         exit 0
     else
