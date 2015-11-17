@@ -420,6 +420,7 @@ ngrok_url(){
     then
         run_ngrok
     else
+        RANCHER_NGROK_URL=$(echo ${RANCHER_NGROK_URL}| rev | cut -d " " -f 1 | rev)
         if [[ ${DCE_COMMAND} == "ngrokurl" ]]
         then
             echo ${RANCHER_NGROK_URL}
