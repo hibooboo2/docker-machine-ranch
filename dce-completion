@@ -21,6 +21,7 @@ _dce_possible_flags()
     -N
     -h
     -i
+    -T
     --help
     --delete
     --delete-only
@@ -29,7 +30,8 @@ _dce_possible_flags()
     --name
     --ngrok
     --ngrok-url
-    --digitalocean" -- ${1}) )
+    --digitalocean
+    --validation-tests" -- ${1}) )
     echo "${POSSIBLE_FLAG[@]}"
 }
 
@@ -57,7 +59,8 @@ _dce()
 EOF
     if [ "${WAS_FLAG}" == "1" ]
     then
-        _dce_flag_arg ${prev} ${cur}
+#        _dce_flag_arg ${prev} ${cur}
+        COMPREPLY=( $(_dce_possible_flags ${cur}) )
     else
         COMPREPLY=( $(_dce_possible_flags ${cur}) )
     fi

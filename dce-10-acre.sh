@@ -8,8 +8,8 @@ DCE_NAME=$(basename "$0")
 DCE_INSTALLED=$(which ${DCE_NAME})
 VERBOSE_MODE="false"
 
-SHORT_FLAGS="M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:"
-LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url][digitalocean]:"
+SHORT_FLAGS="M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:T"
+LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url][digitalocean]:[validation-tests]"
 
 DCE_COMMAND="show_usage"
 
@@ -113,6 +113,9 @@ ${DCE_NAME} Usage:
     --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN}  Launch vms using Digital Ocean.
         This flag cannot be used with -C -c -M or -M.
 
+    -T | --validation-tests Run the validation tests.
+        This will use buildmaster to run the validation tests on the cluster.
+
 
 Example usage:
 
@@ -194,7 +197,7 @@ ${DCE_NAME} flags:
     -i Print out master ip of cluster (Can be used in combination with -N)
     --ngrok Run an ngrok container on the master so that rancher can be accessed via public url. (Hides rancher ip.)
     --ngrok-url Get the ngrok url for the cluster.
-    --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN} Create cluster using Digital Ocean vms.
+    -T | --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN} Create cluster using Digital Ocean vms.
 
 Minimal command to use all defaults:
     ${DCE_NAME} -f
@@ -372,6 +375,9 @@ while getopts "${SHORT_FLAGS}" opt; do
             DCE_DOCKER_MACHINE_DRIVER=digitalocean
             DIGITALOCEAN_ACCESS_TOKEN=${OPTARG}
             ;;
+        T | validation-tests)
+            DCE_RUN_VALIDATION_TEST=true
+            ;;
         h | help)
             if [ -z "${DCE_INSTALLED}" ]
             then
@@ -496,6 +502,12 @@ create_slaves() {
         done
 }
 
+run_validation_tests() {
+    [[ "${DCE_RUN_VALIDATION_TEST}" != "true" ]] && return 0
+    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -it -e CATTLE_TEST_URL=http://$(get_master_ip) -e CATTLE_IDEMPOTENT_CHECKS=false --privileged -e CATTLE_TEST_PARALLEL_THREADS=4 --name=${DCE_CLUSTER_NAME}_buildmaster_volumes rancher/build-master bash -x /opt/cattle/scripts/git-manager"
+    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -d -e CATTLE_TEST_URL=http://$(get_master_ip) -e CATTLE_IDEMPOTENT_CHECKS=false --privileged -e CATTLE_TEST_PARALLEL_THREADS=4 --volumes-from=buildmaster_volumes --name=${DCE_CLUSTER_NAME}_validation_tests rancher/build-master bash -x /opt/cattle/scripts/git-manager"
+}
+
 delete_cluster(){
     CLUSTER_EXISTS=$(cluster_exists)
     [[ "${CLUSTER_EXISTS}" != "0" && "${DCE_DELETE_CLUSTER}" != "true" ]] && echo Cluster already exists with ${CLUSTER_EXISTS} nodes && exit 1
@@ -511,7 +523,7 @@ build_cluster()
 {
     [[ ${DCE_DELETE_CLUSTER} == "true" ]] && delete_cluster
     if [ "$(cluster_exists)" == 0 ]; then
-        start=$(date -u +"%s")
+        local start=$(date -u +"%s")
         create_master
         IP=$(get_master_ip)
         echo -n "Waiting for server to start "
@@ -545,14 +557,18 @@ build_cluster()
         [[ ${VERBOSE_MODE} == true ]] && set -x
 
 
-        diff=$(($master-$start))
-        echo "$(($diff / 60)) minutes and $(($diff % 60)) seconds elapsed to create master and start rancher."
-        diff=$(($all_slaves-$master))
-        echo "$(($diff / 60)) minutes and $(($diff % 60)) seconds elapsed to create slaves and get them all in rancher."
+        local master=$(($master-$start))
+        local slaves=$(($all_slaves-$master))
+
         if [[ "${DCE_USE_NGROK}" == "true" ]]
         then
             run_ngrok
         fi
+        run_validation_tests
+        cat <<EOF
+        $(($master / 60)) minutes and $(($master % 60)) seconds elapsed to create master and start rancher.
+        $(($slaves / 60)) minutes and $(($slaves % 60)) seconds elapsed to create slaves and get them all in rancher.
+EOF
         exit 0
     else
         echo "Cluster ${DCE_CLUSTER_NAME} exists still, or existed and didn't delete add

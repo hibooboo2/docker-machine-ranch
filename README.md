@@ -106,6 +106,9 @@ dce-10-acre.sh Usage:
     --digitalocean ${DIGITALOCEAN_ACCESS_TOKEN}  Launch vms using Digital Ocean.
         This flag cannot be used with -C -c -M or -M.
 
+    -T | --validation-tests Run the validation tests.
+        This will use buildmaster to run the validation tests on the cluster.
+
 
 Example usage:
 
