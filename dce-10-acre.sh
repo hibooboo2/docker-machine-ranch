@@ -114,7 +114,7 @@ ${DCE_NAME} Usage:
         This flag cannot be used with -C -c -M or -M.
 
     -T | --validation-tests Run the validation tests.
-        This will use buildmaster to run the validation tests on the cluster.
+        This will use buildmaster to run the validation tests on the cluster in a container on the master.
 
 
 Example usage:
@@ -197,7 +197,8 @@ ${DCE_NAME} flags:
     -i Print out master ip of cluster (Can be used in combination with -N)
     --ngrok Run an ngrok container on the master so that rancher can be accessed via public url. (Hides rancher ip.)
     --ngrok-url Get the ngrok url for the cluster.
-    -T | --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN} Create cluster using Digital Ocean vms.
+    --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN} Create cluster using Digital Ocean vms.
+    -T | --validation-tests Run validation tests in a container on the master after the cluster launches.
 
 Minimal command to use all defaults:
     ${DCE_NAME} -f

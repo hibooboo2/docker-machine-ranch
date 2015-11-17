@@ -120,7 +120,7 @@ dce-10-acre.sh Usage:
         This flag cannot be used with -C -c -M or -M.
 
     -T | --validation-tests Run the validation tests.
-        This will use buildmaster to run the validation tests on the cluster.
+        This will use buildmaster to run the validation tests on the cluster in a container on the master.
 
 
 Example usage:
