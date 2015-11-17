@@ -416,7 +416,7 @@ cluster_exists(){
 ngrok_url(){
     [[ "$(cluster_exists)" == "0" ]] && echo "Cluster ${DCE_CLUSTER_NAME} doesn't exist" && exit 1
     RANCHER_NGROK_URL=$(docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker logs rancher-ngrok | grep -iIohE 'http?://[^[:space:]]+'")
-    if [ -z ${RANCHER_NGROK_URL} ]
+    if [[ -z "${RANCHER_NGROK_URL}" ]]
     then
         run_ngrok
     else
@@ -504,7 +504,8 @@ create_slaves() {
 
 run_validation_tests() {
     [[ "${DCE_RUN_VALIDATION_TEST}" != "true" ]] && return 0
-    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -it -e CATTLE_TEST_URL=http://$(get_master_ip) -e CATTLE_IDEMPOTENT_CHECKS=false --privileged -e CATTLE_TEST_PARALLEL_THREADS=4 --name=${DCE_CLUSTER_NAME}_buildmaster_volumes rancher/build-master bash -x /opt/cattle/scripts/git-manager"
+    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -d -e CATTLE_TEST_URL=http://$(get_master_ip) -e CATTLE_IDEMPOTENT_CHECKS=false --privileged -e CATTLE_TEST_PARALLEL_THREADS=4 --name=${DCE_CLUSTER_NAME}_buildmaster_volumes rancher/build-master bash -x /opt/cattle/scripts/git-manager"
+    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker logs -f ${DCE_CLUSTER_NAME}_buildmaster_volumes"
     docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -d -e CATTLE_TEST_URL=http://$(get_master_ip) -e CATTLE_IDEMPOTENT_CHECKS=false --privileged -e CATTLE_TEST_PARALLEL_THREADS=4 --volumes-from=buildmaster_volumes --name=${DCE_CLUSTER_NAME}_validation_tests rancher/build-master bash -x /opt/cattle/scripts/git-manager"
 }
 
