@@ -533,7 +533,7 @@ build_cluster()
 
         [[ ${VERBOSE_MODE} == true ]] && set +x
         while sleep 3; do
-            if [ "$(curl -s http://${IP}/ping)" = "pong" ]; then
+            if [ "$(curl -s http://${IP}/ping)" == "pong" ]; then
                 master=$(date -u +"%s")
                 break
             fi
