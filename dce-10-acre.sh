@@ -9,7 +9,7 @@ DCE_INSTALLED=$(which ${DCE_NAME})
 VERBOSE_MODE="false"
 
 SHORT_FLAGS="M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:T"
-LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url][digitalocean]:[validation-tests]"
+LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url][ngrok-subdomain]:[digitalocean]:[validation-tests][validation-tests-only]"
 
 DCE_COMMAND="show_usage"
 
@@ -115,6 +115,8 @@ ${DCE_NAME} Usage:
 
     -T | --validation-tests Run the validation tests.
         This will use buildmaster to run the validation tests on the cluster in a container on the master.
+    --validation-tests-only Run the validation tests on an existing cluster. (Can combine with -N)
+        ex: ${DCE_NAME} -N cluster-3 --validation-tests-only
 
 
 Example usage:
@@ -197,8 +199,10 @@ ${DCE_NAME} flags:
     -i Print out master ip of cluster (Can be used in combination with -N)
     --ngrok Run an ngrok container on the master so that rancher can be accessed via public url. (Hides rancher ip.)
     --ngrok-url Get the ngrok url for the cluster.
+    --ngrok-subdomain Choose subdomain for ngrok.
     --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN} Create cluster using Digital Ocean vms.
     -T | --validation-tests Run validation tests in a container on the master after the cluster launches.
+    --validation-tests-only Run validation tests in a container on an existing cluster. Only. (Can combine with -N)
 
 Minimal command to use all defaults:
     ${DCE_NAME} -f
@@ -366,6 +370,10 @@ while getopts "${SHORT_FLAGS}" opt; do
             DCE_USE_NGROK="true"
             DCE_COMMAND="ngrokurl"
             ;;
+        ngrok-subdomain)
+            DCE_USE_NGROK="true"
+            DCE_NGROK_SUBDOMAIN="${OPTARG}"
+            ;;
         i)
             echo $(docker-machine ip "${DCE_CLUSTER_NAME}-master")
             exit 0
@@ -378,6 +386,11 @@ while getopts "${SHORT_FLAGS}" opt; do
             ;;
         T | validation-tests)
             DCE_RUN_VALIDATION_TEST=true
+            ;;
+        validation-tests-only)
+            DCE_RUN_VALIDATION_TEST=true
+            DCE_COMMAND="validation-tests"
+            DCE_SKIP_CHECK="true"
             ;;
         h | help)
             if [ -z "${DCE_INSTALLED}" ]
@@ -432,8 +445,14 @@ ngrok_url(){
 }
 
 run_ngrok(){
-    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -d --name=rancher-ngrok -e IP_PORT=$(get_master_ip):80 hibooboo2/ngrok"
+    : ${DCE_NGROK_IMAGE:=hibooboo2/ngrok}
+    if [[ ! -z ${DCE_NGROK_SUBDOMAIN} ]]
+    then
+        local NGROK_ARGS="-e SUBDOMAIN=${DCE_NGROK_SUBDOMAIN}"
+    fi
+    docker-machine ssh "${DCE_CLUSTER_NAME}-master" "docker run -d --name=rancher-ngrok -e IP_PORT=$(get_master_ip):80 ${NGROK_ARGS} ${DCE_NGROK_IMAGE}"
     sleep 5
+    docker-machine ssh ""
     ngrok_url
 }
 
@@ -600,7 +619,10 @@ EOF
             ;;
         shorthelp)
             show_short_help
+            ;;
+        validation-tests)
+            run_validation_tests
+            ;;
     esac
  }
-
- main
+main

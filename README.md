@@ -121,6 +121,8 @@ dce-10-acre.sh Usage:
 
     -T | --validation-tests Run the validation tests.
         This will use buildmaster to run the validation tests on the cluster in a container on the master.
+    --validation-tests-only Run the validation tests on an existing cluster. (Can combine with -N)
+        ex: dce-10-acre.sh -N cluster-3 --validation-tests-only
 
 
 Example usage:
