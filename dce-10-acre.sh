@@ -23,7 +23,7 @@ DCE_COMMAND="show_usage"
 : ${DCE_CLUSTER_NAME=$(whoami)}
 : ${DCE_RUN="false"}
 : ${DCE_SKIP_CHECK="false"}
-: ${DCE_SLAVES=3}
+: ${DCE_SLAVES=1}
 : ${DCE_USE_NGROK:="false"}
 : ${DCE_USE_BUILD_MASTER:=false}
 

@@ -131,7 +131,7 @@ Example usage:
     ram master for all components from rancher.
         dce-10-acre.sh -f
         or
-        dce-10-acre.sh -C 4 -M 2048 -c 2 -m 1024 -s 3
+        dce-10-acre.sh -C 4 -M 2048 -c 2 -m 1024 -s 1
         or
         dce-10-acre.sh --digitalocean 262415404adaf7be5e5019680014e85e7e70f47d5bceee39668d4120a69a6b74
 
