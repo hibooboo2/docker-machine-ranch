@@ -31,6 +31,7 @@ _dce_possible_flags()
     --ngrok
     --ngrok-url
     --digitalocean
+    --do
     --validation-tests
     --validation-tests-only" -- ${1}) )
     echo "${POSSIBLE_FLAG[@]}"

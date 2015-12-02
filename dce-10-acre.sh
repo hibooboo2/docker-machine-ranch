@@ -9,7 +9,7 @@ DCE_INSTALLED=$(which ${DCE_NAME})
 VERBOSE_MODE="false"
 
 SHORT_FLAGS="M:m:C:c:v:p:H:u:n:b:s:DqhVfdN:hi-:T"
-LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url][ngrok-subdomain]:[digitalocean]:[validation-tests][validation-tests-only]"
+LONG_OPTS="[help][delete][delete-only][cattle-version]:[python-agent-version]:[name]:[ngrok][ngrok-url][ngrok-subdomain]:[do][digitalocean]:[validation-tests][validation-tests-only]"
 
 DCE_COMMAND="show_usage"
 
@@ -113,6 +113,9 @@ ${DCE_NAME} Usage:
     --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN}  Launch vms using Digital Ocean.
         This flag cannot be used with -C -c -M or -M.
 
+    --do Create cluster using Digital Ocean. Assumes \${DIGITALOCEAN_ACCESS_TOKEN} is set in environment.
+            This flag cannot be used with -C -c -M or -M.
+
     -T | --validation-tests Run the validation tests.
         This will use buildmaster to run the validation tests on the cluster in a container on the master.
     --validation-tests-only Run the validation tests on an existing cluster. (Can combine with -N)
@@ -201,6 +204,7 @@ ${DCE_NAME} flags:
     --ngrok-url Get the ngrok url for the cluster.
     --ngrok-subdomain Choose subdomain for ngrok.
     --digitalocean \${DIGITALOCEAN_ACCESS_TOKEN} Create cluster using Digital Ocean vms.
+    --do Create cluster using Digital Ocean. Assumes \${DIGITALOCEAN_ACCESS_TOKEN} is set in environment.
     -T | --validation-tests Run validation tests in a container on the master after the cluster launches.
     --validation-tests-only Run validation tests in a container on an existing cluster. Only. (Can combine with -N)
 
@@ -383,6 +387,11 @@ while getopts "${SHORT_FLAGS}" opt; do
             _DRIVER_SELECTED=true
             DCE_DOCKER_MACHINE_DRIVER=digitalocean
             DIGITALOCEAN_ACCESS_TOKEN=${OPTARG}
+            ;;
+        do)
+            [[ ! -z ${_DRIVER_SELECTED} ]] && multiple_drivers
+            _DRIVER_SELECTED=true
+            DCE_DOCKER_MACHINE_DRIVER=digitalocean
             ;;
         T | validation-tests)
             DCE_RUN_VALIDATION_TEST=true
