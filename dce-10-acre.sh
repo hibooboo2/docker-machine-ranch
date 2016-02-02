@@ -124,13 +124,13 @@ ${DCE_NAME} Usage:
 
 Example usage:
 
-    All defaults: virtual box with 1 master 4 cores 2048 mb ram 3 slaves 2 cores 1096 mb
+    All defaults: virtual box with 1 master ${DCE_MASTER_CORES} cores ${DCE_MASTER_MEM} mb ram ${DCE_SLAVES} slaves ${DCE_SLAVE_CORES} cores ${DCE_SLAVE_MEM} mb
     ram master for all components from rancher.
         ${DCE_NAME} -f
         or
         ${DCE_NAME} -C ${DCE_MASTER_CORES} -M ${DCE_MASTER_MEM} -c ${DCE_SLAVE_CORES} -m ${DCE_SLAVE_MEM} -s ${DCE_SLAVES}
         or
-        ${DCE_NAME} --digitalocean 262415404adaf7be5e5019680014e85e7e70f47d5bceee39668d4120a69a6b74
+        ${DCE_NAME} --digitalocean 262415404adaf7be5e5019680014e85e7e70f47d5bceee39668d4130a69a6b74
 
 EOF
 if [[ ${DCE_SHORT_HELP} == "true" ]]

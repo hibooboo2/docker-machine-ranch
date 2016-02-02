@@ -130,13 +130,13 @@ dce-10-acre.sh Usage:
 
 Example usage:
 
-    All defaults: virtual box with 1 master 4 cores 2048 mb ram 3 slaves 2 cores 1096 mb
+    All defaults: virtual box with 1 master 4 cores 2048 mb ram 1 slaves 2 cores 1024 mb
     ram master for all components from rancher.
         dce-10-acre.sh -f
         or
         dce-10-acre.sh -C 4 -M 2048 -c 2 -m 1024 -s 1
         or
-        dce-10-acre.sh --digitalocean 262415404adaf7be5e5019680014e85e7e70f47d5bceee39668d4120a69a6b74
+        dce-10-acre.sh --digitalocean 262415404adaf7be5e5019680014e85e7e70f47d5bceee39668d4130a69a6b74
 
 
 
