@@ -170,7 +170,7 @@ isValidRepoCommit() {
     local SUPPLIED=${1}
     arrIN=(${SUPPLIED//// })
     [[ -z "${arrIN[0]}" || -z "${arrIN[1]}" ]] && myEcho ${1} is not a proper \{githubUser\}/\{git\|commit/tag/branch\} && exit 4
-    EXISTS=$(curl -s -L github.com/${arrIN[0]}/cattle/tree/${arrIN[1]})
+    EXISTS=$(curl -s -L github.com/${arrIN[0]}/${2}/tree/${arrIN[1]})
     if [[ ${EXISTS} == *"Not Found"* ]]
     then
         echo ${SUPPLIED} not found on github.
@@ -296,7 +296,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             isNum $OPTARG && DCE_SLAVE_CORES=$OPTARG ;;
         v | cattle-version)
             #Set version of cattle. In form of {githubUser}/{commit/tag/branch}
-            isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
+            isValidRepoCommit $OPTARG cattle; arrIN=(${OPTARG//// })
             CATTLE_REPO="https://github.com/${arrIN[0]}/cattle.git"
             CATTLE_COMMIT=${arrIN[1]}
             myEcho Using cattle version $CATTLE_REPO:$CATTLE_COMMIT
@@ -304,7 +304,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             ;;
         p | python-agent-version)
             #Set version of python agent. In form of {githubUser}/{commit/tag/branch}
-            isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
+            isValidRepoCommit $OPTARG python-agent; arrIN=(${OPTARG//// })
             PYTHON_AGENT_REPO="https://github.com/${arrIN[0]}/python-agent.git"
             PYTHON_AGENT_COMMIT=${arrIN[1]}
             myEcho Using python agent version $PYTHON_AGENT_REPO:$PYTHON_AGENT_COMMIT
@@ -312,7 +312,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             ;;
         H)
             #Set version of hostapi. In form of {githubUser}/{commit/tag/branch}
-            isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
+            isValidRepoCommit $OPTARG host-api; arrIN=(${OPTARG//// })
             HOST_API_REPO="https://github.com/${arrIN[0]}/host-api.git"
             HOST_API_COMMIT=${arrIN[1]}
             myEcho Using cattle version $HOST_API_REPO:$HOST_API_COMMIT
@@ -320,7 +320,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             ;;
         u)
             #Set version of ui. In form of {githubUser}/{commit/tag/branch}
-            isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
+            isValidRepoCommit $OPTARG ui; arrIN=(${OPTARG//// })
             UI_REPO="https://github.com/${arrIN[0]}/ui.git"
             UI_COMMIT=${arrIN[1]}
             myEcho Using cattle version $UI_REPO:$UI_COMMIT
@@ -328,7 +328,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             ;;
         n)
             #Set version of node agent. In form of {githubUser}/{commit/tag/branch}
-            isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
+            isValidRepoCommit $OPTARG node-agent; arrIN=(${OPTARG//// })
             NODE_AGENT_REPO="https://github.com/${arrIN[0]}/node-agent.git"
             NODE_AGENT_COMMIT=${arrIN[1]}
             myEcho Using cattle version $NODE_AGENT_REPO:$NODE_AGENT_COMMIT
@@ -336,7 +336,7 @@ while getopts "${SHORT_FLAGS}" opt; do
             ;;
         b)
             #Set version of build tools. In form of {githubUser}/{commit/tag/branch}
-            isValidRepoCommit $OPTARG; arrIN=(${OPTARG//// })
+            isValidRepoCommit $OPTARG build-tools; arrIN=(${OPTARG//// })
             BUILD_TOOLS_REPO="https://github.com/${arrIN[0]}/build-tools.git"
             BUILD_TOOLS_COMMIT=${arrIN[1]}
             myEcho Using cattle version $BUILD_TOOLS_REPO:$BUILD_TOOLS_COMMIT
